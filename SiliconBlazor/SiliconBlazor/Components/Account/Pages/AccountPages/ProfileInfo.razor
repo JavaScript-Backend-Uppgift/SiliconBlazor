@@ -1,0 +1,134 @@
+﻿
+@using System.Net.Http.Headers
+@using Microsoft.AspNetCore.Mvc
+@using Microsoft.EntityFrameworkCore
+@using SiliconBlazor.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Authorization;
+
+
+@rendermode InteractiveServer
+
+@inject HttpClient httpClient
+@inject UserService UserService
+
+
+
+@if (user == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <div class="content-left">
+        <div class="avatar">
+            @if (string.IsNullOrEmpty(user.ProfileImage))
+            {
+                <img src="../wwwroot/Images/uploads/profiles/avatar.png" alt="avatar image">
+            }
+            else
+            {
+                <img src="@user.ProfileImage" alt="avatar image">
+            }
+            <InputFile id="fileUpload" OnChange="HandleProfileImageSubmit" accept="image/*" class="form-control mb-3" hidden />
+            <label for="fileUpload"><i class="fa-solid fa-rotate-reverse"></i></label>
+
+        </div>
+        <div class="account-info">
+            <h5>@user.FirstName @user.LastName</h5>
+            <p>@user.Email</p>
+        </div>
+        <div class="links">
+            <NavLink Match="NavLinkMatch.All" class="btn-transparent link-btn" href="/accountdetails"><i class="fa-regular fa-gear"></i>Account Details</NavLink>
+            <NavLink class="btn-transparent link-btn" href="/accountnotification"><i class="fa-regular fa-lock"></i>Account Notification</NavLink>
+            <form action="Account/Logout" method="post">
+               <AntiforgeryToken />
+               <input type="hidden" name="ReturnUrl" value="@currentUrl" />
+               <button class="btn-transparent link-btn" type="submit">
+                    <i class="fa-regular fa-arrow-right-from-bracket"></i>Sign Out
+               </button>
+            </form>
+        </div>
+        
+    </div>
+}
+
+@code {
+    private string? currentUrl;
+
+    private ApplicationUser user = default!;
+    private MultipartFormDataContent FileModel = new MultipartFormDataContent();
+    private IBrowserFile? selectedFile;
+    private string ProfileImage { get; set; } 
+
+
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        user = await UserService.GetUserAsync();
+
+
+    }
+
+
+    private async Task HandleProfileImageSubmit(InputFileChangeEventArgs e)
+    {
+
+
+        if (e.File != null)
+        {
+            selectedFile = e.File;
+            using var content = new MultipartFormDataContent();
+            var fileContent = new StreamContent(selectedFile.OpenReadStream(maxAllowedSize: 1024 * 1024 * 15));
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue(selectedFile.ContentType);
+            content.Add(fileContent, "file", selectedFile.Name);
+
+            try
+            {
+                var response = await httpClient.PostAsync("https://fileprovider-siliconapp.azurewebsites.net/api/Upload?code=EVZb6DsuFq4E9-ccuDMCHZi0-SNofCeud3WTffIhadVbAzFuPiZJEQ%3D%3D&containerName=profiles", content);
+                if (response.IsSuccessStatusCode)
+                {
+                    var jsonDocument = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+                    var filePath = jsonDocument.RootElement.GetProperty("filePath").GetString();
+
+                    if (!string.IsNullOrEmpty(filePath))
+                    {
+                        await UpdateUserProfileImageAsync(filePath);
+                        StateHasChanged();
+
+                        Console.WriteLine("Worked");
+                    }
+
+                    // var filePath = await response.Content.ReadAsStringAsync();
+
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error");
+            }
+
+
+        }
+    }
+
+    private async Task UpdateUserProfileImageAsync(string filePath)
+    {
+        user.ProfileImage = filePath;
+        var result = await UserService.UpdateUserAsync(user);
+
+        if (result.Succeeded)
+        {
+            Console.WriteLine("Uploaded successfully");
+        }
+        else
+        {
+            //sad error msg
+        }
+    }
+
+
+}

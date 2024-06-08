@@ -1,0 +1,97 @@
+﻿@page "/accountnotification"
+@using Newtonsoft.Json
+@inject HttpClient httpClient
+
+<PageTitle>Account Notification</PageTitle>
+
+<section class="account-notification">
+    <div class="container">
+
+        <ProfileInfo />
+
+        <div class="notification">
+            <h1>Notifications</h1>
+
+            <EditForm FormName="subscribeform" Model="Model" OnValidSubmit="HandleSubmit" class="notification-form" novalidate>
+                <label class="email">Preferred email for notifications</label>
+                <InputText class="email-input" type="email" placeholder="example@gmail.com" @bind-Value="@Model.Email" />
+
+                <div id="theme-switch-notification" class="btn-switch">
+                    <label class="switch" for="switch-mode-notification">
+                        <InputCheckbox id="switch-mode-notification" @bind-Value="@Model.checkboxNewsletter"/>
+                        <span class="slider round"></span>
+                    </label>
+                    <div class="button-label-box">
+                        <label>Subscribe to Newsletter</label>
+                        <p>Nec, posuere non felis duis massa vitae aliquet interdum scelerisque. Neque ullamcorper.</p>
+                    </div>
+                </div>
+   
+                <div class="buttons">
+                    <button type="reset" class="btn-gray">Cancel</button>
+                    <button type="submit" class="btn-theme-s">Save changes</button>
+                </div>
+                @if (!string.IsNullOrEmpty(StatusMsg))
+                {
+                    <span class="status-msg">@StatusMsg</span>
+                }
+            </EditForm>
+
+        </div>
+    </div>
+</section>
+
+@code {
+
+    [SupplyParameterFromQuery]
+    public string StatusMsg { get; set; } = "";
+
+    [SupplyParameterFromForm]
+    public SubscriberNotificationsModel Model { get; set; } = new SubscriberNotificationsModel();
+
+
+    public class UnsubscribeRequest
+    {
+        public string Email { get; set; } = string.Empty;
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (!Model.checkboxNewsletter)
+        {
+            var unsubscribeRequest = new UnsubscribeRequest { Email = Model.Email };
+            var jsonContent = new StringContent(JsonConvert.SerializeObject(unsubscribeRequest), Encoding.UTF8, "application/json");
+
+            var request = new HttpRequestMessage(HttpMethod.Delete, "https://silicon-newsletterprovider.azurewebsites.net/api/UnSubscribe?code=gBbP_WxXfBNF7Q3IOeL316GAzO3CQ72JPMxejTrIyYGjAzFut58_OQ%3D%3D&email")
+                {
+                    Content = jsonContent
+                };
+
+            var unsubscribeResult = await httpClient.SendAsync(request);
+            if (unsubscribeResult.IsSuccessStatusCode)
+            {
+                StatusMsg = "Unsubscribed successfully";
+                Model.Email = string.Empty; // Clear the email field
+            }
+            else
+            {
+                StatusMsg = "Could not unsubscribe, please try again";
+            }
+        }
+
+        else 
+        {
+            var subscribeResult = await httpClient.PostAsJsonAsync("https://silicon-newsletterprovider.azurewebsites.net/api/Subscribe?code=utt8Wl_-ivbaStUa0q17AABzlkG6vmGZuFkctqvlAdASAzFuq9T2mw==", Model);
+            if (subscribeResult.IsSuccessStatusCode)
+            {
+                StatusMsg = "Subscription successful";
+            }
+            else
+            {
+                StatusMsg = "Could not subscribe. Make sure to use a valid email address and that the checkbox is checked!";
+            }
+        }
+     
+    }
+
+}

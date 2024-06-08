@@ -1,0 +1,292 @@
+.courses {
+    padding-top: 3rem;
+    padding-bottom: 5rem;
+
+    .container {
+
+        #form-filters {
+
+
+            select {
+                width: 100%;
+            }
+
+            .input-search-group {
+                margin-bottom: 10px;
+                position: relative;
+
+                input {
+                    width: 100%;
+                    margin-top: 10px;
+                }
+
+                i {
+                    position: absolute;
+                    bottom: 7px;
+                    right: 14px;
+                }
+            }
+        }
+
+
+        .header {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .course-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+
+            .course {
+                position: relative;
+                display: block;
+                border-radius: 8px;
+                overflow: hidden;
+                text-decoration: none;
+
+                &:hover {
+                    opacity: 0.85;
+                    transition: ease-in-out 0.5s;
+                    box-shadow: 5px 4px 5px $gray-800;
+                }
+
+                .bestseller {
+                    position: absolute;
+                    top: 1rem;
+                    left: 1rem;
+                    background-color: $success;
+                    color: white;
+                    padding: 4px 12px;
+                    border-radius: 4px;
+                }
+
+                .bookmark {
+                    position: absolute;
+                    background-color: white;
+                    border-radius: 2rem;
+                    top: 1rem;
+                    right: 1rem;
+                    z-index: 999;
+
+                    &:hover {
+                        background-color: $gray-700;
+                        color: white;
+                    }
+                }
+
+                img {
+                    width: 100%;
+
+                    
+                }
+
+                .content {
+                    padding: 1rem 2rem;
+
+                    .title {
+                        font-size: 20px;
+                    }
+
+                    .author {
+                        font-size: 14px;
+                        margin: 0.5rem 0;
+                    }
+
+                    .pricing {
+                        display: flex;
+                        gap: 1rem;
+                        font-size: 18px;
+                        font-weight: 600;
+                    }
+
+                    .price {
+                        font-weight: 700;
+                    }
+
+                    .discount {
+                        color: red;
+                        font-weight: 700;
+                    }
+
+                    .discount-enabled {
+                        color: $gray-600;
+                        text-decoration: line-through;
+                        font-size: 18px;
+                        font-weight: 400;
+                    }
+                }
+
+                .footer {
+                    color: $gray-600;
+                    border-top: 1px solid $gray-400;
+                    display: flex;
+                    gap: 2rem;
+                    margin-top: 1rem;
+                    padding-top: 1rem;
+
+                    .hours {
+                        i {
+                            margin-right: 5px;
+                        }
+                    }
+
+                    .likes {
+                        i {
+                            margin-right: 5px;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+@media (min-width: 992px) {
+    #form-filters {
+
+        .input-search-group {         
+            input {
+                width: 50%;
+                margin-top: 10px;
+            }
+        }
+    }
+}
+
+    @media (min-width: 1200px) {
+        .courses {
+            padding-top: 3rem;
+            padding-bottom: 5rem;
+
+            .container {
+
+                #form-filters {
+                    display: flex;
+                    justify-content: flex-end;
+                    align-items: center;
+                    gap: 1.5rem;
+
+                    select {
+                        padding: 0.3rem;
+                    }
+
+                    .input-search-group {
+                        margin-bottom: 10px;
+                        width: 100%;
+
+                        input {
+                            padding: 0.2rem;
+                        }
+                    }
+                }
+
+
+                .header {
+                    display: flex;
+                    flex-direction: row;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 1rem;
+                }
+
+                .course-items {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+                    gap: 2rem;
+
+                    .course {
+                        position: relative;
+                        display: block;
+                        border-radius: 8px;
+                        overflow: hidden;
+                        text-decoration: none;
+
+                        .bestseller {
+                            position: absolute;
+                            top: 1rem;
+                            left: 1rem;
+                            background-color: $success;
+                            color: white;
+                            padding: 4px 12px;
+                            border-radius: 4px;
+                        }
+
+                        .bookmark {
+                            position: absolute;
+                            background-color: white;
+                            border-radius: 2rem;
+                            top: 1rem;
+                            right: 1rem;
+                            z-index: 999;
+
+                            &:hover {
+                                background-color: $gray-700;
+                                color: white;
+                            }
+                        }
+
+                        img {
+                            width: 100%;
+                        }
+
+                        .content {
+                            padding: 1rem 2rem;
+
+                            .title {
+                                font-size: 20px;
+                            }
+
+                            .author {
+                                font-size: 14px;
+                                margin: 0.5rem 0;
+                            }
+
+                            .pricing {
+                                display: flex;
+                                gap: 1rem;
+                                font-size: 18px;
+                                font-weight: 600;
+                            }
+
+                            .discount-enabled {
+                                color: $gray-600;
+                                text-decoration: line-through;
+                                font-size: 18px;
+                                font-weight: 400;
+                            }
+                        }
+
+                        .footer {
+                            color: $gray-600;
+                            border-top: 1px solid $gray-400;
+                            display: flex;
+                            gap: 2rem;
+                            margin-top: 1rem;
+                            padding-top: 1rem;
+
+                            .hours {
+                                i {
+                                    margin-right: 5px;
+                                }
+                            }
+
+                            .likes {
+                                i {
+                                    margin-right: 5px;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+   

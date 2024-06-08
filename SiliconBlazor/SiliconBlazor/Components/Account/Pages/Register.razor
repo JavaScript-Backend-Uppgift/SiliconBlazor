@@ -1,0 +1,249 @@
+﻿@page "/Account/Register"
+@rendermode InteractiveServer
+
+<PageTitle>Sign up</PageTitle>
+
+<section class="signup">
+    <div class="container">
+
+        @if (!string.IsNullOrEmpty(StatusMessage))
+        {
+            <div class="alert alert-danger error-message">
+                @StatusMessage
+            </div>
+        }
+
+        <EditForm FormName="signupform" Model="SignUpForm" id="signupForm" OnValidSubmit="OnValidSubmit" asp-route-returnUrl="@ReturnUrl" novalidate>
+            <DataAnnotationsValidator />
+
+            <h1>Welcome Back</h1>
+            <p>Already have an account? <a href="/account/login">Sign in here</a></p>
+
+            <div class="form-content">
+
+                <div id="form-firstname" class="input-group">
+                    <label>Enter your Firstname</label>                  
+                    <InputText @bind-Value="SignUpForm.FirstName" id="firstName" type="text" placeholder="Firstname" />
+                        <span>
+                            <ValidationMessage For="() => SignUpForm.FirstName" id="firstName-error" class="text-danger" />
+                        </span>
+                </div>
+                <div id="form-lastname" class="input-group">
+                    <label>Enter your lastname</label>
+                    <InputText @bind-Value="SignUpForm.LastName" id="lastName" type="text" placeholder="Lastname" />
+                    <ValidationMessage For="() => SignUpForm.LastName" id="lastName-error" class="text-danger" />
+                    <span class="status-message">@StatusMessage</span>
+                </div>
+                <div id="form-email" class="input-group">
+                    <label>Enter your Email</label>
+                    <InputText @bind-Value="SignUpForm.Email" id="email" type="email" placeholder="Email" />
+                    <ValidationMessage For="() => SignUpForm.Email" id="email-error" class="text-danger" />
+                    <span class="status-message">@StatusMessage</span>
+                </div>
+
+                <div id="form-password" class="input-group">
+                    <label>Enter your Password</label>
+                    <InputText @bind-Value="SignUpForm.Password" id="password" type="password" placeholder="Password" />
+                    <ValidationMessage For="() => SignUpForm.Password" id="password-error" class="text-danger" />
+                    <span class="status-message">@StatusMessage</span>
+                </div>
+
+                <div id="form-confirmPassword" class="input-group">
+                    <label>Confirm your password</label>
+                    <InputText @bind-Value="SignUpForm.ConfirmPassword" id="confirmPassword" data-comparewith="password" type="password" placeholder="Confirm password" />
+                    <span id="confirmPassword-error" asp-validation-for="ConfirmPassword"></span>
+                    <ValidationMessage For="() => SignUpForm.ConfirmPassword" id="confirmPassword-error" class="text-danger" />
+                    <span class="status-message">@StatusMessage</span>
+                </div>
+
+                <div id="form-terms" class="checkbox-group">
+                    <div class="input-group">
+                        <InputCheckbox @bind-Value="SignUpForm.TermsAndCondition" id="terms" type="checkbox" />
+                        <label type="checkbox">Terms and Conditions</label>
+                    </div>
+                    <ValidationMessage For="() => SignUpForm.TermsAndCondition" id="password-error" class="text-danger" />
+                    <span id="terms-error"></span>
+                </div>
+                <div id="form-button">
+                    <button type="submit" class="btn btn-theme"><i class="fa-regular fa-arrow-left-to-bracket"></i>Sign Up</button>
+                </div>
+
+            </div>
+        </EditForm>
+    </div>
+</section>
+
+
+
+@code {
+
+
+
+    //BJÖRNS KOD
+    [SupplyParameterFromQuery]
+    public string StatusMessage { get; set; } = "";
+
+    [SupplyParameterFromQuery]
+    public string? ReturnUrl { get; set; }
+
+    [SupplyParameterFromForm]
+    public SignUpFormViewModel SignUpForm { get; set; } = new();
+
+    [Inject]
+    public ServiceBusClient ServiceBusClient { get; set; } = null!;
+
+
+    public async Task OnValidSubmit(EditContext editContext)
+    {
+        var user = new ApplicationUser { FirstName = SignUpForm.FirstName, LastName = SignUpForm.LastName, Email = SignUpForm.Email, UserName = SignUpForm.Email };
+
+        try
+        {
+            var alreadyExists = await UserManager.FindByEmailAsync(SignUpForm.Email);
+            if (alreadyExists != null)
+            {
+                StatusMessage = "An account with this e-mail address already exists.";
+                return;
+            }
+
+
+            var result = await UserManager.CreateAsync(user, SignUpForm.Password);
+            if (!result.Succeeded)
+            {
+                StatusMessage = "Unable to register account. Please try again.";
+                return;
+            };
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = "An error occured while creating the account";
+            return;
+        }
+
+
+
+        var queueClient = ServiceBusClient.CreateSender("verification_request");
+        var message = new ServiceBusMessage(JsonSerializer.Serialize(new { Email = SignUpForm.Email }));
+
+        try
+        {
+            await queueClient.SendMessageAsync(message);
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = "An error occurred while sending the verification request.";
+            return;
+        }
+      
+        if (UserManager.Options.SignIn.RequireConfirmedAccount)
+        {
+            RedirectManager.RedirectTo("Account/RegisterConfirmation", new() { ["email"] = user.Email, ["returnUrl"] = ReturnUrl });
+        }
+        await SignInManager.SignInAsync(user, isPersistent: false);
+        RedirectManager.RedirectTo(ReturnUrl);
+    }
+
+
+    //MODIFIERAT EFTER HANS VIDEO
+    // [SupplyParameterFromQuery]
+    // public string StatusMessage { get; set; } = "";
+
+    // [SupplyParameterFromQuery]
+    // public string? ReturnUrl { get; set; }
+
+    // [SupplyParameterFromForm]
+    // public SignUpFormViewModel SignUpForm { get; set; } = new();
+
+    // [Inject]
+    // public ServiceBusClient ServiceBusClient { get; set; } = null!;
+
+
+    // public async Task OnValidSubmit(EditContext editContext)
+    // {
+    //     var user = new ApplicationUser
+    //         {
+    //             UserProfile = new UserProfile
+    //             {
+    //                 FirstName = SignUpForm.FirstName,
+    //                 LastName = SignUpForm.LastName,
+
+    //             },
+    //             UserName = SignUpForm.Email,
+    //             Email = SignUpForm.Email
+    //         };
+
+
+    //     var result = await UserManager.CreateAsync(user, SignUpForm.Password);
+    //     if (!result.Succeeded)
+    //     {
+    //         StatusMessage = "Unable to register account. Please try again.";
+    //         return;
+    //     };
+
+    //     await Http.PostAsJsonAsync("https://silicon-verificationprovider.azurewebsites.net/api/validate?code=P5zFtmUdfpRlvimQQDjx31xOf0X1MLiA9LOEhdp2la3NAzFuK_2URA==", SignUpForm);
+    //     if (UserManager.Options.SignIn.RequireConfirmedAccount)
+    //     {
+    //         RedirectManager.RedirectTo("Account/RegisterConfirmation", new() { ["email"] = SignUpForm.Email, ["returnUrl"] = ReturnUrl });
+    //     }
+    //     await SignInManager.SignInAsync(user, isPersistent: false);
+    //     RedirectManager.RedirectTo(ReturnUrl);
+    // }
+
+
+@* 
+
+<section id="signup">
+    <div class="container">
+
+        @if (!string.IsNullOrEmpty(StatusMessage))
+        {
+            <div class="error-message">
+                @StatusMessage
+            </div>
+        }
+
+        <EditForm method="post" FormName="signupform" Model="SignUpForm" OnValidSubmit="OnValidSubmit" asp-route-returnUrl="@ReturnUrl" novalidate>
+            <DataAnnotationsValidator />
+
+            <h1>Create Account</h1>
+            <p>Already have an account? <a href="/account/login">Sign in here.</a></p>
+
+            <div class="content">
+                <div id="form-firstname" class="input-group">
+                    <label>First name</label>
+                    <InputText @bind-Value="SignUpForm.FirstName" />
+                    <span><ValidationMessage For="() => SignUpForm.FirstName" /></span>
+                </div>
+                <div id="form-lastname" class="input-group">
+                    <label>Last name</label>
+                    <InputText @bind-Value="SignUpForm.LastName" />
+                    <span><ValidationMessage For="() => SignUpForm.LastName" /></span>
+                </div>
+                <div id="form-email" class="input-group">
+                    <label>Email</label>
+                    <InputText @bind-Value="SignUpForm.Email" type="email" />
+                    <span><ValidationMessage For="() => SignUpForm.Email" /></span>
+                </div>
+                <div id="form-password" class="input-group">
+                    <label>Password</label>
+                    <InputText @bind-Value="SignUpForm.Password" type="password" />
+                    <span><ValidationMessage For="() => SignUpForm.Password" /></span>
+                </div>
+                <div id="form-confirm" class="input-group">
+                    <label>Confirm password</label>
+                    <InputText @bind-Value="SignUpForm.ConfirmPassword" type="password" />
+                    <span><ValidationMessage For="() => SignUpForm.ConfirmPassword" /></span>
+                </div>
+                <div id="form-terms" class="checkbox-group">
+                    <InputCheckbox @bind-Value="SignUpForm.TermsAndCondition" />
+                    <label>I agree to the <a href="/terms">Terms</a> & <a href="/conditions">Conditions</a></label>
+                    <span><ValidationMessage For="() => SignUpForm.TermsAndCondition" /></span>
+                </div>
+            </div>
+
+            <button id="form-submit" class="btn-theme-s" type="submit">Sign up</button>
+        </EditForm>
+    </div>
+</section> *@
+
+}
